@@ -1,0 +1,162 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: PavanSuta
+// 
+// Create Date:    15:26:35 09/24/2015 
+// Design Name: 
+// Module Name:    color_display 
+// Project Name: 
+// Target Devices: 
+// Tool versions: 
+// Description: 
+//
+// Dependencies: 
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
+module color_display(
+input clock,
+output reg pixel_clock,
+//output reg [2:0]delay,
+input reset,
+output pb_debounce,
+input pb_up,
+output  blank,
+output comp_sync,
+output hsync,
+output wire [2:0]led,
+output vsync,
+output[7:0]red,
+output[7:0]green,
+output[7:0]blue);
+reg [7:0]r;
+reg [7:0]g;
+reg [7:0]b;
+reg [9:0]hc;
+reg [9:0]vc;
+reg [2:0]counter;
+reg [1:0] delay;
+
+initial
+begin
+hc=0;
+vc=0;
+pixel_clock=0;
+delay[0]=0;
+delay[1]=0;
+counter=0;
+end
+
+
+always @(posedge clock)
+ begin
+ delay<=delay+1;
+ if(delay>=2'b01)
+  begin
+  delay<=0;
+  pixel_clock<=~pixel_clock;
+  end 
+end
+
+
+assign comp_sync=1
+
+  
+
+
+always @(posedge pixel_clock)
+   begin
+
+//if (~reset)
+//begin
+//hc <= 0;
+//vc <= 0;
+//end
+//
+//else
+
+begin
+   hc<=hc+1;
+   if(hc==800)
+     begin
+        vc<=vc+1;
+        hc<=0;
+     end
+   	if(vc==520)
+      	vc<=0;
+end
+end
+
+
+
+
+assign hsync=(hc<=96)?0:1;           
+assign vsync=(vc<=1)?0:1; 
+assign blank=((hc>144)&&(hc<=784)&&(vc>31)&&(vc<=511))?1:0;
+
+
+
+
+
+switch_debouncer inst2(.clk(pixel_clock),.PB(pb_up),.PB_state(pb_debounce));   
+
+      
+always @(posedge pb_debounce,negedge reset)
+begin
+if (~reset) 
+counter <=0;
+else
+counter<=counter+1;
+end
+assign led=~counter;
+
+always @(posedge pixel_clock)
+begin
+
+case(counter)
+3'b000: 
+begin 
+r=8'b11111111; g =8'b00000000; b=8'b00000000;
+end 
+3'b001:
+begin
+r=8'b00000000; g =8'b11111111; b=8'b00000000;
+end
+3'b010: 
+begin
+r=8'b00000000; g =8'b00000000; b=8'b11111111;
+end
+
+3'b011:
+begin
+r=8'b11111111 ; g=8'b11111111 ; b=8'b00000000;
+end
+3'b100:
+begin 
+r=8'b11111111 ; g=8'b00000000 ; b=8'b11111111;
+end
+3'b101: 
+begin
+r=8'b00000000 ; g=8'b11111111 ; b=8'b11111111;
+end
+3'b110:
+begin
+ r=8'b11111111 ; g=8'b11111111 ; b=8'b11111111;
+ end
+3'b111: 
+begin
+r=8'b00000000 ; g=8'b00000000 ; b=8'b00000000;
+end
+
+endcase
+end
+
+
+assign red=r;
+assign green=g;
+assign blue=b;
+endmodule
